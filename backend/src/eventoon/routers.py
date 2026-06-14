@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from eventoon.schemas import EventCreate, RegistrationCreate
 from eventoon.services import EventService, get_session
-from eventoon.ai import AIService
+from eventoon.ai import AIService, get_ai_service
 
 router = APIRouter(tags=["events"])
 
@@ -44,7 +44,7 @@ async def get_stats(event_id: int, session: AsyncSession = Depends(get_session))
 async def get_stats_summary(
     event_id: int, 
     session: AsyncSession = Depends(get_session),
-    ai: AIService = Depends(AIService)
+    ai: AIService = Depends(get_ai_service),
 ):
     from eventoon.repositories import EventAIInsightRepository
     service = EventService(session)
@@ -52,15 +52,13 @@ async def get_stats_summary(
     
     stats = await service.stats(event_id)
     
-    # 1. Check Cache
-    cached = await insight_repo.get_cached_insight(event_id, stats.total_registrations)
+    cached = await insight_repo.get_cached_insight(event_id, stats.total_registrations, stats.max_capacity)
     if cached:
         return {"summary": cached, "cached": True}
     
-    # 2. Generate new if not cached or changed
     summary = await ai.get_stats_summary(stats.name, stats.total_registrations, stats.max_capacity)
+    summary = summary[:2000]
     
-    # 3. Save to Cache
-    await insight_repo.save_insight(event_id, stats.total_registrations, summary)
+    await insight_repo.save_insight(event_id, stats.total_registrations, stats.max_capacity, summary)
     
     return {"summary": summary, "cached": False}

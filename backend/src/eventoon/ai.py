@@ -1,3 +1,4 @@
+from functools import lru_cache
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -5,6 +6,11 @@ from eventoon.config import settings
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+@lru_cache
+def get_ai_service() -> "AIService":
+    return AIService()
 
 class AIService:
     def __init__(self):
