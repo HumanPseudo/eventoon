@@ -25,6 +25,12 @@ class EventRepository:
         result = await self.session.execute(select(Event).where(Event.id == event_id))
         return result.scalar_one_or_none()
 
+    async def get_by_id_for_update(self, event_id: int) -> Event | None:
+        result = await self.session.execute(
+            select(Event).where(Event.id == event_id).with_for_update()
+        )
+        return result.scalar_one_or_none()
+
     async def get_top5(self) -> list[tuple[int, str, int]]:
         stmt = (
             select(Event.id, Event.name, func.count(Registration.id).label("total"))

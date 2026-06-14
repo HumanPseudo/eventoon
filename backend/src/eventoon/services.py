@@ -62,25 +62,22 @@ class EventService:
         }
 
     async def register(self, event_id: int, data: RegistrationCreate) -> dict:
-        event = await self.event_repo.get_by_id(event_id)
+        event = await self.event_repo.get_by_id_for_update(event_id)
         if not event:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Event not found")
-
-        if await self.registration_repo.exists_by_email(event_id, data.email):
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered for this event",
-            )
 
         count = await self.registration_repo.count_by_event(event_id)
         if count >= event.max_capacity:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Maximum capacity reached")
 
-        registration = await self.registration_repo.create(
-            event_id=event_id,
-            user_name=data.user_name,
-            email=data.email,
-        )
+        try:
+            registration = await self.registration_repo.create(
+                event_id=event_id,
+                user_name=data.user_name,
+                email=data.email,
+            )
+        except ValueError as e:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
         return {
             "id": registration.id,
             "event_id": registration.event_id,
