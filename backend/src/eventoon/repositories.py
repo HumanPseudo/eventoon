@@ -1,7 +1,8 @@
 from datetime import date, datetime
 
-from sqlalchemy import func, select, delete
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from eventoon.models import Event, Registration, EventAIInsight
 
@@ -61,15 +62,12 @@ class EventAIInsightRepository:
         return result.scalar_one_or_none()
 
     async def save_insight(self, event_id: int, reg_count: int, summary: str):
-        # Delete old insights for this event to keep it clean
-        await self.session.execute(delete(EventAIInsight).where(EventAIInsight.event_id == event_id))
-        
         insight = EventAIInsight(
             event_id=event_id,
             registration_count=reg_count,
-            summary=summary
+            summary=summary,
         )
-        self.session.add(insight)
+        await self.session.merge(insight)
         await self.session.flush()
 
 
@@ -82,10 +80,12 @@ class RegistrationRepository:
             event_id=event_id,
             user_name=user_name,
             email=email,
-            registration_date=datetime.now(tz=None),
         )
         self.session.add(registration)
-        await self.session.flush()
+        try:
+            await self.session.flush()
+        except IntegrityError as e:
+            raise ValueError("Email already registered for this event") from e
         return registration
 
     async def exists_by_email(self, event_id: int, email: str) -> bool:
