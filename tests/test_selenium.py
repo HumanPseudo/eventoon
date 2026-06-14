@@ -33,7 +33,7 @@ def fill_mui_field(driver, label_text, value):
     xpath = (
         f"//label[contains(text(), '{label_text}')]"
         f"/ancestor::div[contains(@class, 'MuiFormControl-root')]"
-        f"//input | //textarea"
+        f"//*[self::input or self::textarea]"
     )
     elem = WebDriverWait(driver, 10).until(
         expected_conditions.presence_of_element_located((By.XPATH, xpath))

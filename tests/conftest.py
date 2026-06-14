@@ -1,9 +1,11 @@
 import os
 
-os.environ.setdefault(
-    "DATABASE_URL",
-    "postgresql+asyncpg://eventoon:change_me@localhost:5432/eventoon",
-)
+test_db_url = os.getenv("TEST_DATABASE_URL")
+if not test_db_url:
+    raise RuntimeError("TEST_DATABASE_URL must be set for tests")
+if "test" not in test_db_url:
+    raise RuntimeError(f"Refusing to run tests against non-test DB: {test_db_url}")
+os.environ["DATABASE_URL"] = test_db_url
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -37,7 +39,7 @@ async def client():
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
-    app.dependency_overrides.clear()
+    app.dependency_overrides.pop(get_session, None)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
