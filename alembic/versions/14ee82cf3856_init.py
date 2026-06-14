@@ -34,7 +34,8 @@ def upgrade() -> None:
     sa.Column('event_id', sa.Integer(), nullable=False),
     sa.Column('user_name', sa.String(length=255), nullable=False),
     sa.Column('email', sa.String(length=255), nullable=False),
-    sa.Column('registration_date', sa.DateTime(), nullable=False),
+    sa.Column('registration_date', sa.DateTime(), nullable=False,
+              server_default=sa.func.now()),
     sa.ForeignKeyConstraint(['event_id'], ['events.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('event_id', 'email', name='uq_event_email')
