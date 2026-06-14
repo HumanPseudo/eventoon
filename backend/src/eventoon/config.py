@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql+asyncpg://eventoon:eventoon@localhost:5432/eventoon"
+    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/dbname"
     CORS_ORIGINS: str = "http://localhost:5173"
     NVIDIA_API_KEY: str | None = None
     NVIDIA_BASE_URL: str = "https://integrate.api.nvidia.com/v1"
