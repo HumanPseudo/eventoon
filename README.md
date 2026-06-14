@@ -54,13 +54,13 @@ docker compose up --build
 │   │   ├── services.py    # Business logic + validation
 │   │   └── routers.py     # HTTP endpoints
 │   ├── alembic/           # Schema migrations
-│   ├── tests/             # API tests (pytest) + E2E (Selenium)
 │   └── Dockerfile
 ├── frontend/              # React + Vite web app
 │   └── src/components/    # Layout, EventList, EventDetail, NewEvent, StatsDashboard
 ├── mobile/                # React Native Expo app
 │   ├── app/               # Expo Router screens
 │   └── lib/               # API client, types
+├── tests/                 # API tests (pytest) + E2E (Selenium)
 ├── docker-compose.yml     # All services orchestration
 └── .github/workflows/     # CI pipeline (lint, test, build)
 ```
