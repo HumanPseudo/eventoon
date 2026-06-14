@@ -7,3 +7,4 @@ dist
 .env
 GEMINI.md
 AGENTS.md
+.vscode/
