@@ -52,13 +52,13 @@ async def get_stats_summary(
     
     stats = await service.stats(event_id)
     
-    cached = await insight_repo.get_cached_insight(event_id, stats.total_registrations, stats.max_capacity)
+    cached = await insight_repo.get_cached_insight(event_id, stats.name, stats.total_registrations, stats.max_capacity)
     if cached:
         return {"summary": cached, "cached": True}
     
     summary = await ai.get_stats_summary(stats.name, stats.total_registrations, stats.max_capacity)
     summary = summary[:2000]
     
-    await insight_repo.save_insight(event_id, stats.total_registrations, stats.max_capacity, summary)
+    await insight_repo.save_insight(event_id, stats.name, stats.total_registrations, stats.max_capacity, summary)
     
     return {"summary": summary, "cached": False}

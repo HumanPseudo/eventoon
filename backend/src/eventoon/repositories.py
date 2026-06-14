@@ -59,18 +59,20 @@ class EventAIInsightRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_cached_insight(self, event_id: int, reg_count: int, max_capacity: int) -> str | None:
+    async def get_cached_insight(self, event_id: int, event_name: str, reg_count: int, max_capacity: int) -> str | None:
         stmt = select(EventAIInsight.summary).where(
             EventAIInsight.event_id == event_id,
+            EventAIInsight.event_name == event_name,
             EventAIInsight.registration_count == reg_count,
             EventAIInsight.max_capacity == max_capacity,
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def save_insight(self, event_id: int, reg_count: int, max_capacity: int, summary: str):
+    async def save_insight(self, event_id: int, event_name: str, reg_count: int, max_capacity: int, summary: str):
         insight = EventAIInsight(
             event_id=event_id,
+            event_name=event_name,
             registration_count=reg_count,
             max_capacity=max_capacity,
             summary=summary,
