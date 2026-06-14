@@ -24,7 +24,9 @@ class EventAIInsight(Base):
     __tablename__ = "event_ai_insights"
 
     event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), primary_key=True)
+    event_name: Mapped[str] = mapped_column(String(255))
     registration_count: Mapped[int] = mapped_column()
+    max_capacity: Mapped[int] = mapped_column()
     summary: Mapped[str] = mapped_column(String(2000))
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
