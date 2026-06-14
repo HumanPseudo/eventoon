@@ -1,0 +1,22 @@
+export interface Event {
+  id: number;
+  name: string;
+  description: string;
+  date: string;
+  max_capacity: number;
+}
+
+export interface EventStats {
+  id: number;
+  name: string;
+  total_registrations: number;
+  max_capacity: number;
+}
+
+export interface Registration {
+  id: number;
+  event_id: number;
+  user_name: string;
+  email: string;
+  registration_date: string;
+}
