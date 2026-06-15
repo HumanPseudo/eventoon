@@ -33,9 +33,14 @@ export default function NewEventScreen() {
     }
     setAiLoading(true);
     try {
-      const res = await api.getAISuggestion(input);
+      const res = await api.getAISuggestion({
+        name: name.trim() || "Untitled Event",
+        description: input,
+        date: date || "TBD",
+        max_capacity: Number(maxCapacity) || 0,
+      });
       setDescription(res.suggestion.slice(0, 1000));
-    } catch (e) {
+    } catch {
       Alert.alert("AI Error", "Failed to improve description.");
     } finally {
       setAiLoading(false);

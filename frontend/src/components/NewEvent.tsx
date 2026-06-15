@@ -29,9 +29,14 @@ export default function NewEvent() {
     setAiLoading(true);
     setError("");
     try {
-      const res = await api.getAISuggestion(input);
+      const res = await api.getAISuggestion({
+        name: stripHtml(name).trim() || "Untitled Event",
+        description: input,
+        date: date || "TBD",
+        max_capacity: Number(maxCapacity) || 0,
+      });
       setDescription(stripHtml(res.suggestion).slice(0, 1000));
-    } catch (err) {
+    } catch {
       setError("AI improvement failed.");
     } finally {
       setAiLoading(false);

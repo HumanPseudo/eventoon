@@ -52,8 +52,9 @@ export const api = {
   getAISummary: (id: number) =>
     request<import("./types").AISummary>(`/events/${id}/stats/summary`),
 
-  getAISuggestion: (prompt: string) =>
-    request<{ suggestion: string }>(`/ai/suggest?prompt=${encodeURIComponent(prompt)}`, {
+  getAISuggestion: (data: { name: string; description: string; date: string; max_capacity: number }) =>
+    request<{ suggestion: string }>("/ai/suggest", {
       method: "POST",
+      body: JSON.stringify(data),
     }),
 };
