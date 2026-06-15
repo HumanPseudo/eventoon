@@ -18,6 +18,7 @@ services:
     restart: unless-stopped
     networks:
       - internal
+      - web
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -43,7 +44,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - internal
       - web
     security_opt:
       - no-new-privileges:true
