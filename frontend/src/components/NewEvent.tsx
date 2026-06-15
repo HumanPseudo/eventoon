@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Paper, Typography, TextField, Button, Alert, CircularProgress, InputAdornment, IconButton, Tooltip } from "@mui/material";
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import {
+  Paper, Typography, TextField, Button, Alert, CircularProgress,
+  InputAdornment, IconButton, Tooltip,
+} from "@mui/material";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import { api } from "../api";
+
+function stripHtml(text: string): string {
+  return text.replace(/<[^>]*>/g, "");
+}
 
 export default function NewEvent() {
   const navigate = useNavigate();
@@ -15,16 +22,16 @@ export default function NewEvent() {
 
   const handleAISuggest = async () => {
     if (!name) {
-      setError("Please enter an event name first to get an AI suggestion.");
+      setError("Please enter an event name first.");
       return;
     }
     setAiLoading(true);
     setError("");
     try {
       const res = await api.getAISuggestion(name);
-      setDescription(res.suggestion);
+      setDescription(stripHtml(res.suggestion).slice(0, 1000));
     } catch (err) {
-      setError("AI suggestion failed. Check your API key.");
+      setError("AI suggestion failed.");
     } finally {
       setAiLoading(false);
     }
@@ -33,10 +40,20 @@ export default function NewEvent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    const trimmedName = stripHtml(name).trim();
+    const trimmedDesc = stripHtml(description).trim();
+    if (!trimmedName || !trimmedDesc || !date || !maxCapacity) {
+      setError("All fields are required.");
+      return;
+    }
+    if (Number(maxCapacity) < 1) {
+      setError("Max capacity must be at least 1.");
+      return;
+    }
     try {
       const event = await api.createEvent({
-        name,
-        description,
+        name: trimmedName,
+        description: trimmedDesc,
         date,
         max_capacity: Number(maxCapacity),
       });

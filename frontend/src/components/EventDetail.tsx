@@ -32,8 +32,18 @@ export default function EventDetail() {
     e.preventDefault();
     setSuccess("");
     setRegError("");
+    const cleanName = userName.trim().replace(/<[^>]*>/g, "");
+    const cleanEmail = email.trim();
+    if (!cleanName || !cleanEmail) {
+      setRegError("All fields are required.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setRegError("Invalid email format.");
+      return;
+    }
     try {
-      await api.register(event.id, { user_name: userName, email });
+      await api.register(event.id, { user_name: cleanName, email: cleanEmail });
       setSuccess("Successfully registered!");
       setUserName("");
       setEmail("");

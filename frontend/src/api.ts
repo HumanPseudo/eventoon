@@ -1,5 +1,9 @@
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+function stripHtml(text: string): string {
+  return text.replace(/<[^>]*>/g, "");
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -7,7 +11,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
   const body = await res.json();
   if (!res.ok) {
-    throw new Error(body.detail || "Request failed");
+    const detail = body.detail;
+    const message = Array.isArray(detail)
+      ? detail.map((e: { loc?: string[]; msg: string }) => `${e.loc?.join(".") ?? ""}: ${e.msg}`).join("; ")
+      : detail || "Request failed";
+    throw new Error(message);
   }
   return body as T;
 }
@@ -22,13 +30,20 @@ export const api = {
   createEvent: (data: { name: string; description: string; date: string; max_capacity: number }) =>
     request<import("./types").Event>("/events", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        name: stripHtml(data.name).slice(0, 255),
+        description: stripHtml(data.description).slice(0, 1000),
+      }),
     }),
 
   register: (eventId: number, data: { user_name: string; email: string }) =>
     request<import("./types").Registration>(`/events/${eventId}/register`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        user_name: stripHtml(data.user_name).slice(0, 255),
+        email: data.email.trim(),
+      }),
     }),
 
   getStats: (id: number) =>
@@ -37,8 +52,8 @@ export const api = {
   getAISummary: (id: number) =>
     request<import("./types").AISummary>(`/events/${id}/stats/summary`),
 
-  getAISuggestion: (prompt: str) =>
+  getAISuggestion: (prompt: string) =>
     request<{ suggestion: string }>(`/ai/suggest?prompt=${encodeURIComponent(prompt)}`, {
-      method: "POST"
+      method: "POST",
     }),
 };

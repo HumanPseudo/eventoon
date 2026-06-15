@@ -1,3 +1,4 @@
+import html
 import re
 import time
 
@@ -27,6 +28,7 @@ async def security_headers_dispatch(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' *;"
     # Reset HSTS to avoid forcing HTTPS on localhost
     response.headers["Strict-Transport-Security"] = "max-age=0"
     return response
@@ -38,9 +40,8 @@ async def metrics_middleware_dispatch(request: Request, call_next):
     start_time = time.time()
     try:
         response = await call_next(request)
-    except Exception as e:
-        # Ensure we don't drop the connection on error in middleware
-        return Response(content=f"Internal Server Error: {str(e)}", status_code=500)
+    except Exception:
+        return Response(content="Internal Server Error", status_code=500)
         
     duration = time.time() - start_time
     path = sanitize_path(request.url.path)
