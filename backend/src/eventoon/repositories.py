@@ -1,5 +1,5 @@
-from datetime import date, datetime
 import logging
+from datetime import date, datetime
 
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
