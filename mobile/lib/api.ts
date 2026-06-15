@@ -1,11 +1,23 @@
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 
-const DEFAULT_HOST = Platform.select({
-  android: "10.0.2.2",
-  default: "localhost",
-});
+function getApiBase(): string {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+  if (Platform.OS === "web") {
+    return "/api";
+  }
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    const host = hostUri.split(":")[0];
+    return `http://${host}:8000`;
+  }
+  const defaultHost = Platform.select({ android: "10.0.2.2", default: "localhost" })!;
+  return `http://${defaultHost}:8000`;
+}
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || `http://${DEFAULT_HOST}:8000`;
+const API_BASE = getApiBase();
 
 function stripHtml(text: string): string {
   return text.replace(/<[^>]*>/g, "");
@@ -29,7 +41,14 @@ async function request<T>(
       `Cannot reach API at ${url}`
     );
   }
-  const body = await res.json();
+  const text = await res.text();
+  let body: any;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    console.error(`[API] Non-JSON response (${res.status}):`, text.slice(0, 500));
+    throw new Error(`Server returned ${res.status} — expected JSON`);
+  }
   if (!res.ok) {
     const detail = body.detail;
     const message = Array.isArray(detail)
