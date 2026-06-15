@@ -12,7 +12,15 @@ from eventoon.schemas import EventCreate, EventStats, RegistrationCreate
 
 
 def sanitize(text: str, max_length: int = 0) -> str:
-    text = html.escape(re.sub(r"<[^>]*>", "", text), quote=True)
+    text = text.replace("\x00", "")
+    stripped = re.sub(r"<[^>]*>", "", text)
+    if stripped != text:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="HTML tags are not allowed",
+        )
+    text = html.escape(stripped, quote=True)
+    text = text.strip()
     if max_length:
         text = text[:max_length]
     return text
@@ -28,7 +36,10 @@ class RateLimiter:
         now = datetime.now()
         self._buckets[key] = [t for t in self._buckets[key] if now - t < self.window]
         if len(self._buckets[key]) >= self.max_requests:
-            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many requests. Try again later.")
+            raise HTTPException(
+                status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many requests. Try again later.",
+            )
         self._buckets[key].append(now)
 
 
@@ -50,13 +61,27 @@ class EventService:
         self.event_repo = EventRepository(session)
         self.registration_repo = RegistrationRepository(session)
 
+    async def cleanup_all(self):
+        await self.registration_repo.delete_all()
+        await self.event_repo.delete_all()
+
     async def create(self, data: EventCreate) -> dict:
-        event = await self.event_repo.create(
-            name=sanitize(data.name, 255),
-            description=sanitize(data.description, 1000),
-            date=data.date,
-            max_capacity=data.max_capacity,
-        )
+        name = sanitize(data.name, 255)
+        description = sanitize(data.description, 1000)
+        if not name or not description:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Name and description cannot be empty after sanitization",
+            )
+        try:
+            event = await self.event_repo.create(
+                name=name,
+                description=description,
+                date=data.date,
+                max_capacity=data.max_capacity,
+            )
+        except ValueError as e:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
         return {
             "id": event.id,
             "name": event.name,
@@ -107,10 +132,16 @@ class EventService:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Maximum capacity reached")
 
         try:
+            user_name = sanitize(data.user_name, 255)
+            if not user_name:
+                raise HTTPException(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="User name cannot be empty after sanitization",
+                )
             registration = await self.registration_repo.create(
                 event_id=event_id,
-                user_name=sanitize(data.user_name, 255),
-                email=data.email.strip(),
+                user_name=user_name,
+                email=data.email.strip().replace("\n", "").replace("\r", ""),
             )
         except ValueError as e:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Registration failed") from e

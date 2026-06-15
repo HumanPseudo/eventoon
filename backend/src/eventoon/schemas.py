@@ -5,10 +5,10 @@ from pydantic import BaseModel, EmailStr, Field
 
 
 class EventCreate(BaseModel):
-    name: Annotated[str, Field(max_length=255)]
-    description: Annotated[str, Field(max_length=1000)]
+    name: Annotated[str, Field(min_length=1, max_length=255)]
+    description: Annotated[str, Field(min_length=1, max_length=1000)]
     date: date
-    max_capacity: int
+    max_capacity: Annotated[int, Field(gt=0)]
 
 
 class EventResponse(BaseModel):
@@ -23,7 +23,7 @@ class EventResponse(BaseModel):
 
 
 class RegistrationCreate(BaseModel):
-    user_name: Annotated[str, Field(max_length=255)]
+    user_name: Annotated[str, Field(min_length=1, max_length=255)]
     email: Annotated[EmailStr, Field(max_length=255)]
 
 

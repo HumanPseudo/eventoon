@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,10 +11,17 @@ class EventRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    async def delete_all(self):
+        await self.session.execute(text("TRUNCATE TABLE events CASCADE"))
+        await self.session.flush()
+
     async def create(self, name: str, description: str, date: date, max_capacity: int) -> Event:
         event = Event(name=name, description=description, date=date, max_capacity=max_capacity)
         self.session.add(event)
-        await self.session.flush()
+        try:
+            await self.session.flush()
+        except IntegrityError as e:
+            raise ValueError("An event with this name already exists") from e
         return event
 
     async def list_all(self) -> list[Event]:
@@ -69,7 +76,9 @@ class EventAIInsightRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_cached_insight(self, event_id: int, event_name: str, reg_count: int, max_capacity: int) -> str | None:
+    async def get_cached_insight(
+        self, event_id: int, event_name: str, reg_count: int, max_capacity: int
+    ) -> str | None:
         stmt = select(EventAIInsight.summary).where(
             EventAIInsight.event_id == event_id,
             EventAIInsight.event_name == event_name,
@@ -79,7 +88,9 @@ class EventAIInsightRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def save_insight(self, event_id: int, event_name: str, reg_count: int, max_capacity: int, summary: str):
+    async def save_insight(
+        self, event_id: int, event_name: str, reg_count: int, max_capacity: int, summary: str
+    ):
         insight = EventAIInsight(
             event_id=event_id,
             event_name=event_name,
@@ -94,6 +105,10 @@ class EventAIInsightRepository:
 class RegistrationRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def delete_all(self):
+        await self.session.execute(text("DELETE FROM registrations"))
+        await self.session.flush()
 
     async def create(self, event_id: int, user_name: str, email: str) -> Registration:
         registration = Registration(

@@ -10,6 +10,7 @@ class Base(DeclarativeBase):
 
 class Event(Base):
     __tablename__ = "events"
+    __table_args__ = (UniqueConstraint("name", name="uq_event_name"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
