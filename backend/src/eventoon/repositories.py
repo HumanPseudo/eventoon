@@ -1,10 +1,13 @@
 from datetime import date, datetime
+import logging
 
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from eventoon.models import Event, EventAIInsight, Registration
+
+logger = logging.getLogger(__name__)
 
 
 class EventRepository:
@@ -120,6 +123,8 @@ class RegistrationRepository:
         try:
             await self.session.flush()
         except IntegrityError as e:
+            await self.session.rollback()
+            logger.error(f"IntegrityError creating registration: {e}")
             raise ValueError("Email already registered for this event") from e
         return registration
 
