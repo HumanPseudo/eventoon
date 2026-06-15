@@ -1,16 +1,17 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -20,10 +21,19 @@ export default function NewEventScreen() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(new Date());
+  const [showPicker, setShowPicker] = useState(false);
   const [maxCapacity, setMaxCapacity] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const dateString = date.toISOString().split("T")[0];
+
+  const handleDateChange = (_: unknown, selected?: Date) => {
+    setShowPicker(Platform.OS !== "web");
+    if (selected) setDate(selected);
+  };
 
   const handleAISuggest = async () => {
     const input = description.trim();
@@ -36,7 +46,7 @@ export default function NewEventScreen() {
       const res = await api.getAISuggestion({
         name: name.trim() || "Untitled Event",
         description: input,
-        date: date || "TBD",
+        date: dateString,
         max_capacity: Number(maxCapacity) || 0,
       });
       setDescription(res.suggestion.slice(0, 1000));
@@ -48,29 +58,37 @@ export default function NewEventScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!name.trim() || !description.trim() || !date.trim() || !maxCapacity.trim()) {
-      Alert.alert("Error", "Please fill in all fields");
+    setError("");
+    if (!name.trim() || !description.trim() || !maxCapacity.trim()) {
+      setError("Please fill in all fields");
       return;
     }
-    if (Number(maxCapacity) < 1) {
-      Alert.alert("Error", "Max capacity must be at least 1.");
+    const cap = Number(maxCapacity);
+    if (!Number.isInteger(cap) || cap < 1) {
+      setError("Max capacity must be a positive integer.");
       return;
     }
     setSubmitting(true);
     try {
       const event = await api.createEvent({
-        name,
-        description,
-        date,
-        max_capacity: Number(maxCapacity),
+        name: name.trim(),
+        description: description.trim(),
+        date: dateString,
+        max_capacity: cap,
       });
       setName("");
       setDescription("");
-      setDate("");
+      setDate(new Date());
       setMaxCapacity("");
+      setError("");
       router.push(`/event/${event.id}`);
     } catch (e) {
-      Alert.alert("Error", (e as Error).message);
+      const msg =
+        typeof e === "object" && e !== null && "message" in e
+          ? (e as Error).message
+          : String(e);
+      setError(msg || "Something went wrong");
+      Alert.alert("Error", msg || "Something went wrong");
     } finally {
       setSubmitting(false);
     }
@@ -81,10 +99,14 @@ export default function NewEventScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.title}>Create New Event</Text>
 
         <View style={styles.form}>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
           <Text style={styles.label}>Event Name</Text>
           <TextInput
             style={styles.input}
@@ -93,13 +115,35 @@ export default function NewEventScreen() {
             onChangeText={setName}
           />
 
-          <Text style={styles.label}>Date (YYYY-MM-DD)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="2026-12-31"
-            value={date}
-            onChangeText={setDate}
-          />
+          <Text style={styles.label}>Date</Text>
+          {Platform.OS === "web"
+            ? React.createElement("input", {
+                type: "date",
+                value: dateString,
+                onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                  setDate(new Date(e.target.value + "T12:00:00")),
+                style: styles.input,
+              })
+            : (
+            <>
+              <TouchableOpacity
+                onPress={() => setShowPicker(true)}
+                style={styles.dateButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="calendar" size={18} color="#555" />
+                <Text style={styles.dateText}>{dateString}</Text>
+              </TouchableOpacity>
+              {showPicker && (
+                <DateTimePicker
+                  value={date}
+                  mode="date"
+                  display="default"
+                  onChange={handleDateChange}
+                />
+              )}
+            </>
+          )}
 
           <Text style={styles.label}>Maximum Capacity</Text>
           <TextInput
@@ -112,20 +156,43 @@ export default function NewEventScreen() {
 
           <View style={styles.row}>
             <Text style={styles.label}>Description</Text>
-            <Pressable
-              onPress={handleAISuggest}
-              disabled={aiLoading}
-              style={styles.aiButton}
-            >
-              {aiLoading ? (
-                <ActivityIndicator size="small" color="#1976d2" />
-              ) : (
-                <>
-                  <Ionicons name="sparkles" size={16} color="#1976d2" />
-                  <Text style={styles.aiButtonText}>AI Improve</Text>
-                </>
-              )}
-            </Pressable>
+            {Platform.OS === "web"
+              ? React.createElement("button", {
+                  type: "button",
+                  onClick: handleAISuggest,
+                  disabled: aiLoading,
+                  style: {
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    flexDirection: "row" as const,
+                    alignItems: "center",
+                    padding: 4,
+                    gap: 4,
+                  },
+                },
+                React.createElement("span", {
+                  style: { color: "#1976d2", fontSize: 13, fontWeight: "600" },
+                }, aiLoading ? "Thinking..." : "AI Improve")
+              )
+              : (
+              <TouchableOpacity
+                onPress={handleAISuggest}
+                disabled={aiLoading}
+                style={styles.aiButton}
+                activeOpacity={0.7}
+              >
+                {aiLoading ? (
+                  <ActivityIndicator size="small" color="#1976d2" />
+                ) : (
+                  <>
+                    <Ionicons name="sparkles" size={16} color="#1976d2" />
+                    <Text style={styles.aiButtonText}>AI Improve</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
           <TextInput
             style={[styles.input, styles.textArea]}
@@ -136,19 +203,41 @@ export default function NewEventScreen() {
             numberOfLines={4}
           />
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.submitButton,
-              pressed && { opacity: 0.8 },
-              submitting && { opacity: 0.5 },
-            ]}
-            onPress={handleSubmit}
-            disabled={submitting}
-          >
-            <Text style={styles.submitButtonText}>
-              {submitting ? "Creating..." : "Create Event"}
-            </Text>
-          </Pressable>
+          {Platform.OS === "web"
+            ? React.createElement("button", {
+                type: "button",
+                onClick: handleSubmit,
+                disabled: submitting || aiLoading,
+                style: {
+                  backgroundColor: "#1976d2",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: 16,
+                  cursor: "pointer",
+                  width: "100%",
+                  marginTop: 10,
+                  opacity: (submitting || aiLoading) ? 0.5 : 1,
+                },
+              },
+              React.createElement("span", {
+                style: { color: "#fff", fontWeight: "700", fontSize: 16 },
+              }, submitting ? "Creating..." : "Create Event")
+            )
+            : (
+            <TouchableOpacity
+              style={[
+                styles.submitButton,
+                (submitting || aiLoading) && { opacity: 0.5 },
+              ]}
+              onPress={handleSubmit}
+              disabled={submitting || aiLoading}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.submitButtonText}>
+                {submitting ? "Creating..." : "Create Event"}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -178,16 +267,39 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 16,
     backgroundColor: "#fafafa",
+    cursor: "pointer",
   },
   textArea: { height: 100, textAlignVertical: "top" },
-  aiButton: { flexDirection: "row", alignItems: "center", padding: 4 },
+  aiButton: { flexDirection: "row", alignItems: "center", padding: 4, cursor: "pointer" },
   aiButtonText: { color: "#1976d2", fontSize: 13, fontWeight: "600", marginLeft: 4 },
+  dateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    backgroundColor: "#fafafa",
+    gap: 8,
+  },
+  dateText: { fontSize: 15, color: "#333" },
   submitButton: {
     backgroundColor: "#1976d2",
     borderRadius: 8,
     padding: 16,
     alignItems: "center",
     marginTop: 10,
+    cursor: "pointer",
   },
   submitButtonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  errorText: {
+    color: "#d32f2f",
+    backgroundColor: "#fdecea",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    fontSize: 14,
+    fontWeight: "500",
+  },
 });

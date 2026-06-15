@@ -2,9 +2,9 @@ import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { Link, useFocusEffect } from "expo-router";
@@ -55,7 +55,7 @@ export default function EventList() {
       }
       renderItem={({ item }) => (
         <Link href={`/event/${item.id}`} asChild>
-          <Pressable style={styles.card}>
+          <TouchableOpacity style={styles.card} activeOpacity={0.7}>
             <Text style={styles.name}>{item.name}</Text>
             <Text style={styles.desc} numberOfLines={2}>
               {item.description}
@@ -66,7 +66,7 @@ export default function EventList() {
                 Capacity: {item.attendee_count} / {item.max_capacity}
               </Text>
             </View>
-          </Pressable>
+          </TouchableOpacity>
         </Link>
       )}
     />
@@ -88,6 +88,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 4,
+    cursor: "pointer",
   },
   name: { fontSize: 18, fontWeight: "600", marginBottom: 4 },
   desc: { color: "#555", marginBottom: 8 },

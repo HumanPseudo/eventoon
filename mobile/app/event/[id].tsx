@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
@@ -26,6 +26,7 @@ export default function EventDetail() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState("");
+  const [regError, setRegError] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -38,14 +39,15 @@ export default function EventDetail() {
   }, [id]);
 
   const handleRegister = async () => {
+    setRegError("");
     const cleanName = userName.trim().replace(/<[^>]*>/g, "");
     const cleanEmail = email.trim();
     if (!cleanName || !cleanEmail) {
-      Alert.alert("Validation Error", "All fields are required.");
+      setRegError("All fields are required.");
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-      Alert.alert("Validation Error", "Invalid email format.");
+      setRegError("Invalid email format.");
       return;
     }
     setSubmitting(true);
@@ -59,7 +61,8 @@ export default function EventDetail() {
       setUserName("");
       setEmail("");
     } catch (e) {
-      Alert.alert("Error", (e as Error).message);
+      const msg = (e as Error).message;
+      setRegError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -88,7 +91,10 @@ export default function EventDetail() {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
         <Stack.Screen options={{ title: event.name }} />
 
         <Text style={styles.title}>{event.name}</Text>
@@ -105,34 +111,95 @@ export default function EventDetail() {
           {success ? (
             <Text style={styles.success}>{success}</Text>
           ) : null}
-          <TextInput
-            style={styles.input}
-            placeholder="Name"
-            value={userName}
-            onChangeText={setUserName}
-            autoCapitalize="words"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              pressed && { opacity: 0.8 },
-              submitting && { opacity: 0.5 },
-            ]}
-            onPress={handleRegister}
-            disabled={submitting}
-          >
-            <Text style={styles.buttonText}>
-              {submitting ? "Registering..." : "Register"}
-            </Text>
-          </Pressable>
+          {regError ? <Text style={styles.regError}>{regError}</Text> : null}
+          {Platform.OS === "web"
+            ? React.createElement("form", {
+                onSubmit: (e: React.FormEvent) => {
+                  e.preventDefault();
+                  handleRegister();
+                },
+                style: { display: "flex", flexDirection: "column" as const },
+              },
+              React.createElement("input", {
+                type: "text",
+                placeholder: "Name",
+                value: userName,
+                onChange: (e: React.ChangeEvent<HTMLInputElement>) => setUserName(e.target.value),
+                style: {
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  padding: 12,
+                  fontSize: 15,
+                  marginBottom: 12,
+                  fontFamily: "inherit",
+                },
+              }),
+              React.createElement("input", {
+                type: "email",
+                placeholder: "Email",
+                value: email,
+                onChange: (e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value),
+                style: {
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  padding: 12,
+                  fontSize: 15,
+                  marginBottom: 12,
+                  fontFamily: "inherit",
+                },
+              }),
+              React.createElement("button", {
+                type: "submit",
+                disabled: submitting,
+                style: {
+                  backgroundColor: "#1976d2",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: 14,
+                  cursor: "pointer",
+                  width: "100%",
+                  opacity: submitting ? 0.5 : 1,
+                },
+              },
+              React.createElement("span", {
+                style: { color: "#fff", fontWeight: "600", fontSize: 16 },
+              }, submitting ? "Registering..." : "Register")
+              )
+            )
+            : (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Name"
+                value={userName}
+                onChangeText={setUserName}
+                autoCapitalize="words"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  submitting && { opacity: 0.5 },
+                ]}
+                onPress={handleRegister}
+                disabled={submitting}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.buttonText}>
+                  {submitting ? "Registering..." : "Register"}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -176,6 +243,16 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     padding: 14,
     alignItems: "center",
+    cursor: "pointer",
   },
   buttonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  regError: {
+    color: "#d32f2f",
+    backgroundColor: "#fdecea",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    fontSize: 14,
+    fontWeight: "500",
+  },
 });
