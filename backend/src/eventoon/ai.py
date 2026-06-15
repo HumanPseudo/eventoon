@@ -34,7 +34,7 @@ class AIService:
         try:
             # Usamos LangChain PromptTemplates para manejar el contexto
             prompt = ChatPromptTemplate.from_messages([
-                ("system", "You are a professional event marketing expert. Your goal is to write a compelling event description. DO NOT ask questions. Deliver a ready-to-use description immediately."),
+                ("system", "You are a professional event marketing expert. Write a compelling event description in AT MOST 900 characters. DO NOT ask questions. Deliver a ready-to-use description immediately."),
                 ("user", "{input}")
             ])
 
