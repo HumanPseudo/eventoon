@@ -7,7 +7,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
   const body = await res.json();
   if (!res.ok) {
-    throw new Error(body.detail || "Request failed");
+    const detail = body.detail;
+    const message = Array.isArray(detail)
+      ? detail.map((e) => `${e.loc?.join(".") ?? ""}: ${e.msg}`).join("; ")
+      : detail || "Request failed";
+    throw new Error(message);
   }
   return body as T;
 }
@@ -37,8 +41,9 @@ export const api = {
   getAISummary: (id: number) =>
     request<import("./types").AISummary>(`/events/${id}/stats/summary`),
 
-  getAISuggestion: (prompt: str) =>
+  getAISuggestion: (prompt: string) =>
     request<{ suggestion: string }>(`/ai/suggest?prompt=${encodeURIComponent(prompt)}`, {
-      method: "POST"
+      method: "POST",
+      body: "{}",
     }),
 };

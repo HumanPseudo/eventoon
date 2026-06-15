@@ -22,9 +22,9 @@ export default function NewEvent() {
     setError("");
     try {
       const res = await api.getAISuggestion(name);
-      setDescription(res.suggestion);
+      setDescription(res.suggestion.slice(0, 1000));
     } catch (err) {
-      setError("AI suggestion failed. Check your API key.");
+      setError((err as Error).message || "AI suggestion failed.");
     } finally {
       setAiLoading(false);
     }
@@ -36,7 +36,7 @@ export default function NewEvent() {
     try {
       const event = await api.createEvent({
         name,
-        description,
+        description: description.slice(0, 1000),
         date,
         max_capacity: Number(maxCapacity),
       });
