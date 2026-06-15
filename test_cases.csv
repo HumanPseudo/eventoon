@@ -1,0 +1,49 @@
+use_case,test_case_id,description,method,path,expected_status,notes
+Create Event,TC1.1,Create event with valid data,POST,/events,201,Standard creation
+Create Event,TC1.2,Create event with empty name,POST,/events,422,Validation error
+Create Event,TC1.3,Create event with empty description,POST,/events,422,Validation error
+Create Event,TC1.4,Create event with invalid date,POST,/events,422,e.g. "not-a-date"
+Create Event,TC1.5,Create event with max_capacity = 0,POST,/events,422,Minimum is 1 (gt=0)
+Create Event,TC1.6,Create event with max_capacity negative,POST,/events,422,gt=0 validation
+Create Event,TC1.7,Create event with name > 255 chars,POST,/events,422,Rejected by max_length
+Create Event,TC1.8,Create event with description > 1000 chars,POST,/events,422,Rejected by max_length
+Create Event,TC1.9,Create event with HTML in name,POST,/events,201,Sanitized (tags stripped)
+Create Event,TC1.10,Create event with HTML in description,POST,/events,201,Sanitized (tags stripped)
+Create Event,TC1.11,Create event with whitespace-only name,POST,/events,422,Stripped to empty
+Create Event,TC1.12,Create event with whitespace-only description,POST,/events,422,Stripped to empty
+Create Event,TC1.13,Create event with HTML-only description,POST,/events,422,Stripped to empty
+Create Event,TC1.14,Create event with null byte in name,POST,/events,422,Stripped then empty
+Create Event,TC1.15,Create event with max_capacity=999999,POST,/events,201,Very large but valid
+List Events,TC2.1,List events when empty,GET,/events,200,Returns empty list
+List Events,TC2.2,List events with data,GET,/events,200,Returns all events
+List Events,TC2.3,List events ordered by date desc,GET,/events,200,Newest first
+Get Event Detail,TC3.1,Get existing event,GET,/events/{id},200,
+Get Event Detail,TC3.2,Get non-existent event,GET,/events/99999,404,
+Get Event Detail,TC3.3,Get event shows attendee_count,GET,/events/{id},200,Includes count
+Register for Event,TC4.1,Register with valid data,POST,/events/{id}/register,201,
+Register for Event,TC4.2,Register with duplicate email,POST,/events/{id}/register,400,
+Register for Event,TC4.3,Register when event is full,POST,/events/{id}/register,400,At max_capacity
+Register for Event,TC4.4,Register with invalid email,POST,/events/{id}/register,422,No @ symbol (EmailStr)
+Register for Event,TC4.5,Register with empty user_name,POST,/events/{id}/register,422,min_length=1
+Register for Event,TC4.6,Register with whitespace-only user_name,POST,/events/{id}/register,422,Stripped to empty
+Register for Event,TC4.7,Register with user_name > 255 chars,POST,/events/{id}/register,422,max_length=255
+Register for Event,TC4.8,Register for non-existent event,POST,/events/99999/register,404,
+Register for Event,TC4.9,Rate limit after 10 registrations,POST,/events/{id}/register,429,10 req/min per email
+Register for Event,TC4.10,Register with newlines in email,POST,/events/{id}/register,201,Newlines stripped
+Get Event Stats,TC5.1,Get stats for existing event,GET,/events/{id}/stats,200,
+Get Event Stats,TC5.2,Get stats for non-existent event,GET,/events/99999/stats,404,
+Get Event Stats,TC5.3,Stats show correct counts,GET,/events/{id}/stats,200,Matches registrations
+Get AI Summary,TC6.1,Get summary for existing event,GET,/events/{id}/stats/summary,200,
+Get AI Summary,TC6.2,Get summary for non-existent event,GET,/events/99999/stats/summary,404,
+Get AI Summary,TC6.3,Summary is cached on second call,GET,/events/{id}/stats/summary,200,cached field is true
+Get AI Suggestion,TC7.1,Get suggestion with all fields,POST,/ai/suggest,200,
+Get AI Suggestion,TC7.2,Suggestion does not mention date/capacity,POST,/ai/suggest,200,Prompt instructs not to
+Get AI Suggestion,TC7.3,Suggestion has no surrounding quotes,POST,/ai/suggest,200,Sanitized by strip("\"'")
+Export CSV,TC8.1,Export CSV when empty,GET,/events/export/csv,200,Header row only
+Export CSV,TC8.2,Export CSV with events,GET,/events/export/csv,200,Data rows present
+Export CSV,TC8.3,CSV has correct headers,GET,/events/export/csv,200,id,name,date,max_capacity,attendee_count
+Export CSV,TC8.4,CSV content-type is text/csv,GET,/events/export/csv,200,Response header
+Health Check,TC9.1,Health returns 200,GET,/health,200,{"status":"ok"}
+Cleanup,TC10.1,Cleanup returns 204,DELETE,/test/cleanup,204,No content
+Cleanup,TC10.2,After cleanup list is empty,GET,/events,200,Empty array
+
