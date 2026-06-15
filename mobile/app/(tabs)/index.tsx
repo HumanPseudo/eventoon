@@ -20,6 +20,7 @@ export default function EventList() {
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
+      setError("");
       api
         .listEvents()
         .then(setEvents)
@@ -62,7 +63,7 @@ export default function EventList() {
             <View style={styles.row}>
               <Text style={styles.meta}>Date: {item.date}</Text>
               <Text style={styles.meta}>
-                Capacity: {item.max_capacity}
+                Capacity: {item.attendee_count} / {item.max_capacity}
               </Text>
             </View>
           </Pressable>

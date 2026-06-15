@@ -14,6 +14,7 @@ export default function StatsScreen() {
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
+      setError("");
       api
         .listEvents()
         .then(async (list) => {

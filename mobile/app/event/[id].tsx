@@ -29,6 +29,7 @@ export default function EventDetail() {
 
   useEffect(() => {
     if (!id) return;
+    setError("");
     api
       .getEvent(Number(id))
       .then(setEvent)
@@ -89,7 +90,7 @@ export default function EventDetail() {
         <View style={styles.row}>
           <Text style={styles.meta}>Date: {event.date}</Text>
           <Text style={styles.meta}>
-            Capacity: {event.max_capacity}
+            Capacity: {event.attendee_count} / {event.max_capacity}
           </Text>
         </View>
 
