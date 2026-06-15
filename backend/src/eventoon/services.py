@@ -37,7 +37,7 @@ class EventService:
         }
 
     async def list_all(self) -> list[dict]:
-        events = await self.event_repo.list_all()
+        events_with_counts = await self.event_repo.list_all_with_counts()
         return [
             {
                 "id": e.id,
@@ -45,20 +45,25 @@ class EventService:
                 "description": e.description,
                 "date": str(e.date),
                 "max_capacity": e.max_capacity,
+                "attendee_count": count,
             }
-            for e in events
+            for e, count in events_with_counts
         ]
 
     async def get_by_id(self, event_id: int) -> dict:
         event = await self.event_repo.get_by_id(event_id)
         if not event:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+        count = await self.registration_repo.count_by_event(event_id)
+
         return {
             "id": event.id,
             "name": event.name,
             "description": event.description,
             "date": str(event.date),
             "max_capacity": event.max_capacity,
+            "attendee_count": count,
         }
 
     async def register(self, event_id: int, data: RegistrationCreate) -> dict:

@@ -1,10 +1,10 @@
 from datetime import date, datetime
 
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from eventoon.models import Event, Registration, EventAIInsight
+from eventoon.models import Event, EventAIInsight, Registration
 
 
 class EventRepository:
@@ -20,6 +20,16 @@ class EventRepository:
     async def list_all(self) -> list[Event]:
         result = await self.session.execute(select(Event).order_by(Event.date.desc()))
         return list(result.scalars().all())
+
+    async def list_all_with_counts(self) -> list[tuple[Event, int]]:
+        stmt = (
+            select(Event, func.count(Registration.id).label("attendee_count"))
+            .outerjoin(Registration, Registration.event_id == Event.id)
+            .group_by(Event.id)
+            .order_by(Event.date.desc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.all())
 
     async def get_by_id(self, event_id: int) -> Event | None:
         result = await self.session.execute(select(Event).where(Event.id == event_id))

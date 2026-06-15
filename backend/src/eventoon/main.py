@@ -1,16 +1,16 @@
 import re
 import time
 
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+from eventoon.ai import AIService
 from eventoon.config import settings
 from eventoon.routers import router
-from eventoon.ai import AIService
 
 PATH_PATTERN = re.compile(r"/\d+")
 
