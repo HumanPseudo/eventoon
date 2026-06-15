@@ -144,7 +144,7 @@ class EventService:
                 email=data.email.strip().replace("\n", "").replace("\r", ""),
             )
         except ValueError as e:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Registration failed") from e
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
         return {
             "id": registration.id,
             "event_id": registration.event_id,
