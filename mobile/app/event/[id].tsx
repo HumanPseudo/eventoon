@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 
 import { api } from "../../lib/api";
 import type { Event } from "../../lib/types";
@@ -96,6 +96,29 @@ export default function EventDetail() {
         keyboardShouldPersistTaps="handled"
       >
         <Stack.Screen options={{ title: event.name }} />
+
+        {Platform.OS === "web"
+          ? React.createElement("button", {
+              onClick: () => router.back(),
+              style: {
+                background: "none",
+                border: "none",
+                padding: 0,
+                marginBottom: 12,
+                cursor: "pointer",
+                alignSelf: "flex-start",
+                display: "inline-block",
+                color: "#1976d2",
+                fontSize: 15,
+                fontWeight: "500",
+                fontFamily: "inherit",
+              },
+            }, "← Back")
+          : (
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
+              <Text style={styles.backText}>← Back</Text>
+            </TouchableOpacity>
+          )}
 
         <Text style={styles.title}>{event.name}</Text>
         <Text style={styles.description}>{event.description}</Text>
@@ -209,6 +232,8 @@ export default function EventDetail() {
 const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   error: { color: "red" },
+  backButton: { marginBottom: 12, alignSelf: "flex-start" },
+  backText: { color: "#1976d2", fontSize: 15, fontWeight: "500" },
   container: { padding: 16 },
   title: { fontSize: 24, fontWeight: "700", marginBottom: 8 },
   description: { fontSize: 15, color: "#555", marginBottom: 12 },

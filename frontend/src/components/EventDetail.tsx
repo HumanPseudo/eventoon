@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Typography,
   TextField,
@@ -11,6 +11,7 @@ import { api } from "../api";
 import type { Event } from "../types";
 
 export default function EventDetail() {
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [event, setEvent] = useState<Event | null>(null);
   const [error, setError] = useState("");
@@ -54,6 +55,9 @@ export default function EventDetail() {
 
   return (
     <Paper sx={{ p: 3, maxWidth: 600, mx: "auto" }}>
+      <Button onClick={() => navigate(-1)} sx={{ mb: 1, textTransform: "none" }}>
+        ← Back
+      </Button>
       <Typography variant="h4" gutterBottom>
         {event.name}
       </Typography>
