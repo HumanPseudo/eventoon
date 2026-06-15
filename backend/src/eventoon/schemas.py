@@ -17,6 +17,7 @@ class EventResponse(BaseModel):
     description: Annotated[str, Field(max_length=1000)]
     date: date
     max_capacity: int
+    attendee_count: int = 0
 
     model_config = {"from_attributes": True}
 

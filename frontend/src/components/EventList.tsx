@@ -35,11 +35,11 @@ export default function EventList() {
               Date: {event.date}
             </Typography>
             <Typography variant="body2" sx={{ mb: 2 }}>
-              Capacity: {event.max_capacity}
+              Capacity: {event.attendee_count} / {event.max_capacity}
             </Typography>
             <Chip
-              label={event.max_capacity > 0 ? "Open" : "Full"}
-              color={event.max_capacity > 0 ? "success" : "error"}
+              label={event.attendee_count < event.max_capacity ? "Open" : "Full"}
+              color={event.attendee_count < event.max_capacity ? "success" : "error"}
               size="small"
             />
           </CardContent>

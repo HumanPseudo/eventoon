@@ -4,6 +4,7 @@ export interface Event {
   description: string;
   date: string;
   max_capacity: number;
+  attendee_count: number;
 }
 
 export interface Registration {

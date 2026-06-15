@@ -50,7 +50,7 @@ export default function EventDetail() {
       <Typography sx={{ mb: 2 }}>{event.description}</Typography>
       <Typography variant="body2">Date: {event.date}</Typography>
       <Typography variant="body2" sx={{ mb: 3 }}>
-        Capacity: {event.max_capacity}
+        Capacity: {event.attendee_count} / {event.max_capacity}
       </Typography>
 
       <Typography variant="h5" gutterBottom>
