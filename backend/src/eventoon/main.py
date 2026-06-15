@@ -25,7 +25,8 @@ async def security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
-    # Removed HSTS to avoid NetworkErrors on localhost (forces HTTPS)
+    # Set HSTS to 0 to clear it if it was previously set
+    response.headers["Strict-Transport-Security"] = "max-age=0"
     return response
 
 async def metrics_middleware(request: Request, call_next):
@@ -41,14 +42,17 @@ async def metrics_middleware(request: Request, call_next):
 
 app = FastAPI(title="Eventoon", version="0.1.0")
 
-origins = [o.strip() for o in settings.CORS_ORIGINS.split(",")]
-
+# 1. Custom Middlewares
 app.add_middleware(BaseHTTPMiddleware, dispatch=metrics_middleware)
+app.add_middleware(BaseHTTPMiddleware, dispatch=security_headers)
 
+# 2. CORS Middleware (Added LAST to be the outermost layer)
+origins = [o.strip() for o in settings.CORS_ORIGINS.split(",")]
 if "*" in origins:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
+        allow_credentials=False, # Cannot use credentials with "*"
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -57,25 +61,16 @@ else:
         CORSMiddleware,
         allow_origins=origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["Content-Type", "Authorization"],
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
-    app.add_middleware(BaseHTTPMiddleware, dispatch=security_headers)
 
 app.include_router(router)
 
 @app.post("/ai/suggest")
 async def ai_suggest(prompt: str, ai: AIService = Depends(AIService)):
-    """Senior-level: Encapsulated AI service via dependency injection."""
     suggestion = await ai.get_event_suggestion(prompt)
     return {"suggestion": suggestion}
-
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
-stion": suggestion}
-
 
 @app.get("/health")
 async def health():
