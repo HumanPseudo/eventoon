@@ -14,7 +14,8 @@
     "plugins": [
       "expo-asset",
       "expo-font",
-      "expo-router"
+      "expo-router",
+      "@react-native-community/datetimepicker"
     ]
   }
 }
