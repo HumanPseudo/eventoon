@@ -30,7 +30,7 @@ Full-stack event management application. Create events, register attendees, trac
 |-------|------------|
 | **Backend** | FastAPI (Python 3.12), SQLAlchemy 2.0 (async), PostgreSQL 18 |
 | **Frontend** | React 19, Vite, Tailwind 4, MUI 7 |
-| **Mobile** | React Native, Expo SDK 54, Expo Router |
+| **Mobile** | React Native, Expo SDK 52, Expo Router |
 | **AI** | LangChain + NVIDIA AI (optional) |
 | **Monitoring** | Prometheus + Grafana |
 | **Infrastructure** | Docker Compose, GitHub Actions CI/CD |
@@ -67,6 +67,8 @@ For monitoring, start with `docker compose --profile monitoring up --build`.
 | `CORS_ORIGINS` | `http://localhost:5173,http://localhost:8081` | Allowed CORS origins |
 | `NVIDIA_API_KEY` | *(optional)* | API key for AI features |
 | `GRAFANA_PASSWORD` | `admin` | Grafana admin password |
+| `VITE_API_URL` | *(auto: `http://localhost:8000` dev, `/api` prod)* | Frontend API base URL |
+| `EXPO_PUBLIC_API_URL` | *(auto-detected: `http://localhost:8000` / `http://10.0.2.2:8000`)* | Mobile API base URL |
 
 ## Manual Setup
 
@@ -240,38 +242,49 @@ When `NVIDIA_API_KEY` is configured:
 # Start database
 docker compose up -d db
 
-# API tests
+# API tests (backend)
 cd backend && uv run pytest -v
 
 # With coverage
 uv run pytest --cov=eventoon --cov-report=term-missing
 
+# Frontend tests (vitest, no DB needed)
+cd frontend && npm test
+
 # E2E tests (requires CI environment)
 CI=true uv run pytest tests/test_selenium.py -v
 ```
 
-The test suite covers: CRUD operations, 404 handling, duplicate email enforcement, max capacity enforcement, input validation, stats computation, health check.
+The backend test suite covers: CRUD operations, 404 handling, duplicate email enforcement, max capacity enforcement, input validation, stats computation, health check.
+The frontend test suite (vitest) covers: API client (`stripHtml`, request/error handling), event list rendering, event detail + registration form, new event form validation, stats dashboard, navigation layout.
 
 ## Linting & Type Checking
 
 ```bash
+# Backend
 cd backend
 uv run ruff check src        # Lint
 uv run ruff format --check src  # Format check
 uv run mypy src              # Type checking
 uv run bandit -r src         # Security audit
 uv run safety check          # Dependency vulnerabilities
+
+# Frontend
+cd frontend
+npm run lint                # ESLint
+npm run typecheck           # TypeScript check
 ```
 
 ## CI/CD
 
-GitHub Actions workflow (`.github/workflows/ci.yml`) with 4 parallel jobs:
+GitHub Actions workflow (`.github/workflows/ci.yml`) with 6 parallel jobs:
 
 | Job | Description |
 |-----|-------------|
 | `lint` | Ruff, mypy, bandit |
 | `security` | Safety dependency scan, npm audit |
 | `test-api` | Pytest with PostgreSQL service container |
+| `test-frontend` | Vitest (no DB needed) |
 | `test-e2e` | Selenium E2E tests with full stack |
 | `build` | Docker Compose build |
 
@@ -329,6 +342,12 @@ ORDER BY month;
 | Layered architecture (not hexagonal) | Appropriate for 2 entities / 5 endpoints |
 | Async SQLAlchemy + asyncpg | Non-blocking database access for FastAPI |
 | HTML tag rejection (not stripping) | Prevents XSS at input layer; clean rejection feedback |
-| TRUNCATE for cleanup | Faster than DELETE; resets auto-increment IDs |
+| `res.text()` first, then `JSON.parse()` | Response body can only be consumed once; `res.json()` + fallback `res.text()` throws "Body has already been consumed" |
+| Client-side `default=datetime.now` for `registration_date` | DB column lacked a server default; adding it would require a migration; Python-side default is simpler for an existing column |
+| Backend on `web` Docker network | Internal network blocks external DNS resolution (e.g. `integrate.api.nvidia.com`); backend needs both internal (db access) and web (external API calls) |
+| CSP allows `cdn.jsdelivr.net` with `'unsafe-inline'` | Required for MUI icons and React/Vite inline scripts |
 | Nginx sidecar for SPA | Proper static serving + fallback to `index.html` for client-side routing |
-| CSP allows `cdn.jsdelivr.net` | Required for MUI icons loaded at runtime |
+| TRUNCATE for cleanup | Faster than DELETE; resets auto-increment IDs |
+| Native HTML `<form>`/`<button>` on mobile web | `TouchableOpacity` + `react-native-web` has unreliable touch handling on Chrome Android; native HTML elements bypass this |
+| Mobile API URL via `Constants.expoConfig.hostUri` | On Android emulator, `localhost` points to emulator, not host; `10.0.2.2` is the host machine; `hostUri` auto-detects the correct address |
+| MUI over raw Tailwind for components | MUI provides accessible, well-tested form controls, tables, and navigation; Tailwind handles layout grid |
