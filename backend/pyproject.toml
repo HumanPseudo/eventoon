@@ -26,6 +26,10 @@ dev = [
     "pytest-asyncio>=0.25,<1",
     "httpx>=0.28,<1",
     "ruff>=0.9,<1",
+    "mypy>=1.15,<2",
+    "bandit>=1.8,<2",
+    "safety>=3,<4",
+    "pytest-cov>=6,<7",
 ]
 
 [build-system]
@@ -48,3 +52,20 @@ quote-style = "double"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+addopts = "--cov=eventoon --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["src/eventoon"]
+omit = ["*/__init__.py"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+ignore_missing_imports = true
+warn_unused_ignores = true
+no_implicit_optional = true
+disallow_untyped_defs = false
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]
+skips = ["B101"]

@@ -8,3 +8,6 @@ dist
 GEMINI.md
 AGENTS.md
 .vscode/
+.coverage
+htmlcov/
+.coverage.*

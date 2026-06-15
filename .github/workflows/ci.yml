@@ -21,6 +21,33 @@ jobs:
         run: uv run ruff check src
       - name: Ruff format
         run: uv run ruff format --check src
+      - name: Bandit SAST
+        run: uv run bandit -c pyproject.toml -r src
+      - name: Mypy type check
+        run: uv run mypy src
+
+  security:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install backend deps
+        run: uv sync
+      - name: Safety dependency scan
+        run: uv run safety check --full-report
+        continue-on-error: true
+      - name: npm audit frontend
+        working-directory: frontend
+        run: npm audit --audit-level=high || true
+      - name: npm audit mobile
+        working-directory: mobile
+        run: npm audit --audit-level=high || true
 
   test-api:
     runs-on: ubuntu-latest
