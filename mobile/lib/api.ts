@@ -7,6 +7,10 @@ const DEFAULT_HOST = Platform.select({
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || `http://${DEFAULT_HOST}:8000`;
 
+function stripHtml(text: string): string {
+  return text.replace(/<[^>]*>/g, "");
+}
+
 async function request<T>(
   path: string,
   options?: RequestInit
@@ -22,12 +26,16 @@ async function request<T>(
   } catch (e) {
     console.error(`[API] Connection Error:`, e);
     throw new Error(
-      `Cannot reach API at ${url} — ${(e as Error).message}`
+      `Cannot reach API at ${url}`
     );
   }
   const body = await res.json();
   if (!res.ok) {
-    throw new Error(body.detail || "Request failed");
+    const detail = body.detail;
+    const message = Array.isArray(detail)
+      ? detail.map((e: { loc?: string[]; msg: string }) => `${e.loc?.join(".") ?? ""}: ${e.msg}`).join("; ")
+      : detail || "Request failed";
+    throw new Error(message);
   }
   return body as T;
 }
@@ -46,7 +54,11 @@ export const api = {
   }) =>
     request<import("./types").Event>("/events", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        name: stripHtml(data.name).slice(0, 255),
+        description: stripHtml(data.description).slice(0, 1000),
+      }),
     }),
 
   register: (
@@ -55,7 +67,13 @@ export const api = {
   ) =>
     request<import("./types").Registration>(
       `/events/${eventId}/register`,
-      { method: "POST", body: JSON.stringify(data) }
+      {
+        method: "POST",
+        body: JSON.stringify({
+          user_name: stripHtml(data.user_name).slice(0, 255),
+          email: data.email.trim(),
+        }),
+      }
     ),
 
   getStats: (id: number) =>
@@ -66,6 +84,6 @@ export const api = {
 
   getAISuggestion: (prompt: string) =>
     request<{ suggestion: string }>(`/ai/suggest?prompt=${encodeURIComponent(prompt)}`, {
-      method: "POST"
+      method: "POST",
     }),
 };

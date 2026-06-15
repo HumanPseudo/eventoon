@@ -38,16 +38,22 @@ export default function EventDetail() {
   }, [id]);
 
   const handleRegister = async () => {
-    if (!userName.trim() || !email.trim()) {
-      Alert.alert("Error", "Please fill in all fields");
+    const cleanName = userName.trim().replace(/<[^>]*>/g, "");
+    const cleanEmail = email.trim();
+    if (!cleanName || !cleanEmail) {
+      Alert.alert("Validation Error", "All fields are required.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      Alert.alert("Validation Error", "Invalid email format.");
       return;
     }
     setSubmitting(true);
     setSuccess("");
     try {
       await api.register(Number(id), {
-        user_name: userName,
-        email,
+        user_name: cleanName,
+        email: cleanEmail,
       });
       setSuccess("Successfully registered!");
       setUserName("");
