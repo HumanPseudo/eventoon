@@ -1,4 +1,6 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const BASE_URL = import.meta.env.VITE_API_URL || (
+  import.meta.env.DEV ? "http://localhost:8000" : "/api"
+);
 
 function stripHtml(text: string): string {
   return text.replace(/<[^>]*>/g, "");
@@ -9,7 +11,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
-  const body = await res.json();
+  const text = await res.text();
+  let body: any;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    throw new Error(`Server returned ${res.status} — expected JSON`);
+  }
   if (!res.ok) {
     const detail = body.detail;
     const message = Array.isArray(detail)
