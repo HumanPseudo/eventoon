@@ -26,16 +26,17 @@ export default function NewEventScreen() {
   const [aiLoading, setAiLoading] = useState(false);
 
   const handleAISuggest = async () => {
-    if (!name.trim()) {
-      Alert.alert("Input Needed", "Please enter an event name first.");
+    const input = description.trim();
+    if (!input || input.length < 5) {
+      Alert.alert("Input Needed", "Write at least 5 characters in description first.");
       return;
     }
     setAiLoading(true);
     try {
-      const res = await api.getAISuggestion(name);
-      setDescription(res.suggestion);
+      const res = await api.getAISuggestion(input);
+      setDescription(res.suggestion.slice(0, 1000));
     } catch (e) {
-      Alert.alert("AI Error", "Failed to get AI suggestion.");
+      Alert.alert("AI Error", "Failed to improve description.");
     } finally {
       setAiLoading(false);
     }
@@ -44,6 +45,10 @@ export default function NewEventScreen() {
   const handleSubmit = async () => {
     if (!name.trim() || !description.trim() || !date.trim() || !maxCapacity.trim()) {
       Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+    if (Number(maxCapacity) < 1) {
+      Alert.alert("Error", "Max capacity must be at least 1.");
       return;
     }
     setSubmitting(true);
@@ -83,10 +88,27 @@ export default function NewEventScreen() {
             onChangeText={setName}
           />
 
+          <Text style={styles.label}>Date (YYYY-MM-DD)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="2026-12-31"
+            value={date}
+            onChangeText={setDate}
+          />
+
+          <Text style={styles.label}>Maximum Capacity</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="100"
+            value={maxCapacity}
+            onChangeText={setMaxCapacity}
+            keyboardType="numeric"
+          />
+
           <View style={styles.row}>
             <Text style={styles.label}>Description</Text>
-            <Pressable 
-              onPress={handleAISuggest} 
+            <Pressable
+              onPress={handleAISuggest}
               disabled={aiLoading}
               style={styles.aiButton}
             >
@@ -107,23 +129,6 @@ export default function NewEventScreen() {
             onChangeText={setDescription}
             multiline
             numberOfLines={4}
-          />
-
-          <Text style={styles.label}>Date (YYYY-MM-DD)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="2026-12-31"
-            value={date}
-            onChangeText={setDate}
-          />
-
-          <Text style={styles.label}>Maximum Capacity</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="100"
-            value={maxCapacity}
-            onChangeText={setMaxCapacity}
-            keyboardType="numeric"
           />
 
           <Pressable

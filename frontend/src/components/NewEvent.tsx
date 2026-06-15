@@ -21,17 +21,18 @@ export default function NewEvent() {
   const [aiLoading, setAiLoading] = useState(false);
 
   const handleAISuggest = async () => {
-    if (!name) {
-      setError("Please enter an event name first.");
+    const input = description.trim();
+    if (!input || input.length < 5) {
+      setError("Write at least 5 characters in description first.");
       return;
     }
     setAiLoading(true);
     setError("");
     try {
-      const res = await api.getAISuggestion(name);
+      const res = await api.getAISuggestion(input);
       setDescription(stripHtml(res.suggestion).slice(0, 1000));
     } catch (err) {
-      setError("AI suggestion failed.");
+      setError("AI improvement failed.");
     } finally {
       setAiLoading(false);
     }
@@ -80,33 +81,6 @@ export default function NewEvent() {
           placeholder="e.g. Summer Beach Party"
         />
         <TextField
-          label="Description"
-          fullWidth
-          required
-          multiline
-          rows={4}
-          sx={{ mb: 2 }}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          slotProps={{
-            input: {
-              endAdornment: (
-                <InputAdornment position="end">
-                  <Tooltip title="Improve with AI">
-                    <IconButton 
-                      onClick={handleAISuggest} 
-                      disabled={aiLoading}
-                      color="primary"
-                    >
-                      {aiLoading ? <CircularProgress size={24} /> : <AutoAwesomeIcon />}
-                    </IconButton>
-                  </Tooltip>
-                </InputAdornment>
-              )
-            }
-          }}
-        />
-        <TextField
           label="Date"
           type="date"
           fullWidth
@@ -124,6 +98,33 @@ export default function NewEvent() {
           sx={{ mb: 2 }}
           value={maxCapacity}
           onChange={(e) => setMaxCapacity(e.target.value)}
+        />
+        <TextField
+          label="Description"
+          fullWidth
+          required
+          multiline
+          rows={4}
+          sx={{ mb: 2 }}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Tooltip title="Improve with AI">
+                    <IconButton
+                      onClick={handleAISuggest}
+                      disabled={aiLoading}
+                      color="primary"
+                    >
+                      {aiLoading ? <CircularProgress size={24} /> : <AutoAwesomeIcon />}
+                    </IconButton>
+                  </Tooltip>
+                </InputAdornment>
+              )
+            }
+          }}
         />
         <Button type="submit" variant="contained" fullWidth size="large">
           Create Event
