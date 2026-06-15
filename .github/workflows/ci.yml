@@ -49,6 +49,7 @@ jobs:
       - name: Run API tests
         run: uv run pytest -v
         env:
+          DATABASE_URL: postgresql+asyncpg://eventoon:eventoon@localhost:5432/eventoon
           TEST_DATABASE_URL: postgresql+asyncpg://eventoon:eventoon@localhost:5432/eventoon
 
   test-e2e:
@@ -103,10 +104,11 @@ jobs:
           npx serve dist -l 5173 &
           sleep 2
       - name: Run E2E tests
-        run: uv run pytest ../tests/test_selenium.py -v
+        run: uv run pytest tests/test_selenium.py -v
         env:
           SELENIUM_URL: http://localhost:4444/wd/hub
           FRONTEND_URL: http://localhost:5173
+          DATABASE_URL: postgresql+asyncpg://eventoon:eventoon@localhost:5432/eventoon
           TEST_DATABASE_URL: postgresql+asyncpg://eventoon:eventoon@localhost:5432/eventoon
 
   build:
