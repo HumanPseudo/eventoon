@@ -41,7 +41,7 @@ class Registration(Base):
     event_id: Mapped[int] = mapped_column(ForeignKey("events.id"))
     user_name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str] = mapped_column(String(255))
-    registration_date: Mapped[datetime] = mapped_column(server_default=func.now())
+    registration_date: Mapped[datetime] = mapped_column(default=datetime.now)
 
     event: Mapped["Event"] = relationship(back_populates="registrations")
 
