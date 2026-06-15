@@ -28,14 +28,17 @@ export default function StatsDashboard() {
         
         for (const event of list) {
           try {
-            const [s, ai] = await Promise.all([
-              api.getStats(event.id),
-              api.getAISummary(event.id)
-            ]);
+            const s = await api.getStats(event.id);
             statsMap[event.id] = s;
+          } catch (err) {
+            console.error(`Error fetching stats for event ${event.id}:`, err);
+          }
+
+          try {
+            const ai = await api.getAISummary(event.id);
             summariesMap[event.id] = ai;
-          } catch {
-            // skip
+          } catch (err) {
+            console.error(`Error fetching AI summary for event ${event.id}:`, err);
           }
         }
         setStats(statsMap);

@@ -25,13 +25,16 @@ export default function StatsScreen() {
           
           for (const e of list) {
             try {
-              const [s, ai] = await Promise.all([
-                api.getStats(e.id),
-                api.getAISummary(e.id)
-              ]);
-              statsMap[e.id] = s;
-              summariesMap[e.id] = ai;
-            } catch {}
+              statsMap[e.id] = await api.getStats(e.id);
+            } catch (err) {
+              console.error(`Error fetching stats for event ${e.id}:`, err);
+            }
+
+            try {
+              summariesMap[e.id] = await api.getAISummary(e.id);
+            } catch (err) {
+              console.error(`Error fetching AI summary for event ${e.id}:`, err);
+            }
           }
           setStats(statsMap);
           setSummaries(summariesMap);
