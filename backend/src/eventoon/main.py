@@ -20,49 +20,67 @@ def sanitize_path(path: str) -> str:
 REQUEST_COUNT = Counter("http_requests_total", "Total HTTP requests", ["method", "path"])
 REQUEST_DURATION = Histogram("http_request_duration_seconds", "Request duration", ["method", "path"])
 
-app = FastAPI(title="Eventoon", version="0.1.0")
+# --- Middleware Functions ---
 
-# 1. CORS Middleware - Outermost layer to handle preflights correctly
-origins = [o.strip() for o in settings.CORS_ORIGINS.split(",")]
-# Add common variations to be safe
-extra_origins = ["http://localhost", "http://127.0.0.1", "http://0.0.0.0"]
-for r in list(origins):
-    if r.endswith(":80"):
-        extra_origins.append(r.replace(":80", ""))
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins + extra_origins if "*" not in origins else ["*"],
-    allow_credentials=True if "*" not in origins else False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-)
-
-# 2. Custom Middlewares using the decorator pattern (more reliable than BaseHTTPMiddleware in some Starlette versions)
-@app.middleware("http")
-async def add_security_headers(request: Request, call_next):
-    response = await call_next(request)
+async def security_headers_dispatch(request: Request, call_next):
+    response: Response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
-    # Disable HSTS on localhost to prevent forced HTTPS
+    # Reset HSTS to avoid forcing HTTPS on localhost
     response.headers["Strict-Transport-Security"] = "max-age=0"
     return response
 
-@app.middleware("http")
-async def metrics_middleware(request: Request, call_next):
+async def metrics_middleware_dispatch(request: Request, call_next):
     if request.url.path == "/metrics":
         return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
     
     start_time = time.time()
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception as e:
+        # Ensure we don't drop the connection on error in middleware
+        return Response(content=f"Internal Server Error: {str(e)}", status_code=500)
+        
     duration = time.time() - start_time
-    
     path = sanitize_path(request.url.path)
     REQUEST_COUNT.labels(method=request.method, path=path).inc()
     REQUEST_DURATION.labels(method=request.method, path=path).observe(duration)
     return response
+
+# --- App Initialization ---
+
+app = FastAPI(title="Eventoon", version="0.1.0")
+
+# 1. Custom Middlewares (Inner layers)
+app.add_middleware(BaseHTTPMiddleware, dispatch=metrics_middleware_dispatch)
+app.add_middleware(BaseHTTPMiddleware, dispatch=security_headers_dispatch)
+
+# 2. CORS Middleware (Outermost layer)
+# Must be added AFTER other middlewares to be the first to handle requests (especially OPTIONS)
+origins = [o.strip() for o in settings.CORS_ORIGINS.split(",")]
+# Add common local variations
+extra_origins = ["http://localhost", "http://127.0.0.1", "http://0.0.0.0", "http://localhost:5173", "http://localhost:8081"]
+for r in list(origins):
+    if r.endswith(":80"):
+        extra_origins.append(r.replace(":80", ""))
+
+if "*" in origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(set(origins + extra_origins)),
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 app.include_router(router)
 
