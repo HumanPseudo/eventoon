@@ -86,7 +86,7 @@ class AIService:
             )
 
             # Lower temperature for data analysis
-            stats_llm = self.llm.copy(update={"temperature": 0.2})
+            stats_llm = self.llm.model_copy(update={"temperature": 0.2})
             chain = prompt | stats_llm | StrOutputParser()
 
             return await chain.ainvoke(
