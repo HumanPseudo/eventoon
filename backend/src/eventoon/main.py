@@ -25,7 +25,7 @@ async def security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # Removed HSTS to avoid NetworkErrors on localhost (forces HTTPS)
     return response
 
 async def metrics_middleware(request: Request, call_next):
@@ -69,6 +69,12 @@ async def ai_suggest(prompt: str, ai: AIService = Depends(AIService)):
     """Senior-level: Encapsulated AI service via dependency injection."""
     suggestion = await ai.get_event_suggestion(prompt)
     return {"suggestion": suggestion}
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+stion": suggestion}
 
 
 @app.get("/health")
