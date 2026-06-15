@@ -7,54 +7,54 @@
 - [x] `monitoring/prometheus.yml`
 - [x] Backend `/metrics` endpoint — expone métricas para Prometheus
 
-## 2. Backend — Base
-- [ ] `backend/pyproject.toml`
-- [ ] `config.py`
-- [ ] `database.py`
-- [ ] `models.py`
+## 2. Backend — Base ✅
+- [x] `backend/pyproject.toml`
+- [x] `config.py`
+- [x] `database.py`
+- [x] `models.py`
 
-## 3. Backend — Logic
-- [ ] `schemas.py`
-- [ ] `repositories.py`
-- [ ] `services.py`
-- [ ] `routers.py`
+## 3. Backend — Logic ✅
+- [x] `schemas.py`
+- [x] `repositories.py`
+- [x] `services.py`
+- [x] `routers.py`
 - [x] `main.py` — CORS dinámico, metrics middleware, security headers en prod
 
-## 4. Database Migrations
-- [ ] `alembic/` (ini, env, script, versions)
+## 4. Database Migrations ✅
+- [x] `alembic/` (ini, env, script, versions)
 
-## 5. Tests
-- [ ] `tests/conftest.py`
-- [ ] `tests/test_api.py`
+## 5. Tests ✅
+- [x] `backend/tests/conftest.py`
+- [x] `backend/tests/test_api.py`
 
-## 6. Seed Data & Queries
-- [ ] `seed.py`
-- [ ] `sql/queries.sql`
+## 6. Seed Data & Queries ✅
+- [x] `seed.py`
+- [x] `sql/queries.sql`
 
 ## 7. Backend Docker ✅
 - [x] `backend/Dockerfile` — multi-stage (builder + production)
 - [x] `backend/.dockerignore`
 - [x] `backend/start.sh` — migraciones automáticas al arrancar
 
-## 8. Frontend
-- [ ] Setup (`package.json`, `vite.config.ts`, `tsconfig.json`, `index.html`)
-- [ ] API client + types
-- [ ] `Layout.tsx`
-- [ ] `EventList.tsx`
-- [ ] `EventDetail.tsx`
-- [ ] `NewEvent.tsx`
-- [ ] `StatsDashboard.tsx`
+## 8. Frontend ✅
+- [x] Setup (`package.json`, `vite.config.ts`, `tsconfig.json`, `index.html`)
+- [x] API client + types
+- [x] `Layout.tsx`
+- [x] `EventList.tsx`
+- [x] `EventDetail.tsx`
+- [x] `NewEvent.tsx`
+- [x] `StatsDashboard.tsx`
 - [x] `Dockerfile` — multi-stage (builder + nginx)
 
-## 9. Mobile
-- [ ] Setup (`package.json`, `app.json`, `tsconfig.json`, `babel.config.js`)
-- [ ] `lib/api.ts` + `lib/types.ts`
-- [ ] `app/_layout.tsx`, `app/(tabs)/`
-- [ ] Event list + detail screens
-- [ ] Stats screen
+## 9. Mobile ✅
+- [x] Setup (`package.json`, `app.json`, `tsconfig.json`, `babel.config.js`)
+- [x] `lib/api.ts` + `lib/types.ts`
+- [x] `app/_layout.tsx`, `app/(tabs)/`
+- [x] Event list + detail screens
+- [x] Stats screen
 
-## 10. CI/CD
-- [ ] `.github/workflows/ci.yml`
+## 10. CI/CD ✅
+- [x] `.github/workflows/ci.yml`
 
-## 11. E2E Tests
-- [ ] `tests/test_selenium.py`
+## 11. E2E Tests ✅
+- [x] `backend/tests/test_selenium.py`
