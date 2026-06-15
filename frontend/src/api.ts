@@ -34,4 +34,6 @@ export const api = {
   getStats: (id: number) =>
     request<import("./types").EventStats>(`/events/${id}/stats`),
 
+  getAISummary: (id: number) =>
+    request<import("./types").AISummary>(`/events/${id}/stats/summary`),
 };

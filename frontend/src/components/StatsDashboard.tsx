@@ -7,13 +7,15 @@ import {
   ListItem,
   ListItemText,
   Chip,
+  Box,
 } from "@mui/material";
 import { api } from "../api";
-import type { Event, EventStats } from "../types";
+import type { Event, EventStats, AISummary } from "../types";
 
 export default function StatsDashboard() {
   const [events, setEvents] = useState<Event[]>([]);
   const [stats, setStats] = useState<Record<number, EventStats>>({});
+  const [summaries, setSummaries] = useState<Record<number, AISummary>>({});
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -22,14 +24,22 @@ export default function StatsDashboard() {
       .then(async (list) => {
         setEvents(list);
         const statsMap: Record<number, EventStats> = {};
+        const summariesMap: Record<number, AISummary> = {};
+        
         for (const event of list) {
           try {
-            statsMap[event.id] = await api.getStats(event.id);
+            const [s, ai] = await Promise.all([
+              api.getStats(event.id),
+              api.getAISummary(event.id)
+            ]);
+            statsMap[event.id] = s;
+            summariesMap[event.id] = ai;
           } catch {
             // skip
           }
         }
         setStats(statsMap);
+        setSummaries(summariesMap);
       })
       .catch((e) => setError(e.message));
   }, []);
@@ -45,6 +55,7 @@ export default function StatsDashboard() {
         <List>
           {events.map((event) => {
             const s = stats[event.id];
+            const ai = summaries[event.id];
 
             return (
               <ListItem key={event.id} divider sx={{ flexDirection: 'column', alignItems: 'flex-start', py: 2 }}>
@@ -56,6 +67,14 @@ export default function StatsDashboard() {
                       : "Loading..."
                   }
                 />
+                {ai && (
+                  <Box sx={{ mt: 1, p: 1.5, bgcolor: 'grey.50', borderRadius: 1, borderLeft: 4, borderColor: 'primary.main' }}>
+                    <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                      " {ai.summary} "
+                    </Typography>
+                    <Chip label="AI Insight" size="small" variant="outlined" color="primary" sx={{ mt: 1, height: 20, fontSize: '0.65rem' }} />
+                  </Box>
+                )}
               </ListItem>
             );
           })}

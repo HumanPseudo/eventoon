@@ -22,6 +22,11 @@ export interface EventStats {
   max_capacity: number;
 }
 
+export interface AISummary {
+  summary: string;
+  cached: boolean;
+}
+
 export interface ApiError {
   detail: string;
 }

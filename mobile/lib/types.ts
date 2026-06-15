@@ -14,6 +14,11 @@ export interface EventStats {
   max_capacity: number;
 }
 
+export interface AISummary {
+  summary: string;
+  cached: boolean;
+}
+
 export interface Registration {
   id: number;
   event_id: number;

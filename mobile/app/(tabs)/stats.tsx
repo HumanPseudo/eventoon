@@ -3,11 +3,12 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-nativ
 import { useFocusEffect } from "expo-router";
 
 import { api } from "../../lib/api";
-import type { Event, EventStats } from "../../lib/types";
+import type { Event, EventStats, AISummary } from "../../lib/types";
 
 export default function StatsScreen() {
   const [events, setEvents] = useState<Event[]>([]);
   const [stats, setStats] = useState<Record<number, EventStats>>({});
+  const [summaries, setSummaries] = useState<Record<number, AISummary>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -19,13 +20,21 @@ export default function StatsScreen() {
         .listEvents()
         .then(async (list) => {
           setEvents(list);
-          const map: Record<number, EventStats> = {};
+          const statsMap: Record<number, EventStats> = {};
+          const summariesMap: Record<number, AISummary> = {};
+          
           for (const e of list) {
             try {
-              map[e.id] = await api.getStats(e.id);
+              const [s, ai] = await Promise.all([
+                api.getStats(e.id),
+                api.getAISummary(e.id)
+              ]);
+              statsMap[e.id] = s;
+              summariesMap[e.id] = ai;
             } catch {}
           }
-          setStats(map);
+          setStats(statsMap);
+          setSummaries(summariesMap);
         })
         .catch((e) => setError(e.message))
         .finally(() => setLoading(false));
@@ -61,6 +70,8 @@ export default function StatsScreen() {
       }
       renderItem={({ item }) => {
         const s = stats[item.id];
+        const ai = summaries[item.id];
+        
         return (
           <View style={styles.card}>
             <Text style={styles.name}>{item.name}</Text>
@@ -69,6 +80,12 @@ export default function StatsScreen() {
                 ? `${s.total_registrations} / ${s.max_capacity} registrations`
                 : "Loading..."}
             </Text>
+            {ai && (
+              <View style={styles.aiContainer}>
+                <Text style={styles.aiLabel}>AI Insight:</Text>
+                <Text style={styles.aiText}>"{ai.summary}"</Text>
+              </View>
+            )}
           </View>
         );
       }}
@@ -99,5 +116,25 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   name: { fontSize: 16, fontWeight: "600", marginBottom: 4 },
-  stat: { color: "#1976d2", fontSize: 14 },
+  stat: { color: "#1976d2", fontSize: 14, marginBottom: 8 },
+  aiContainer: {
+    marginTop: 8,
+    padding: 10,
+    backgroundColor: "#f0f7ff",
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: "#1976d2",
+  },
+  aiLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#1976d2",
+    marginBottom: 2,
+    textTransform: "uppercase",
+  },
+  aiText: {
+    fontSize: 13,
+    color: "#444",
+    fontStyle: "italic",
+  },
 });
