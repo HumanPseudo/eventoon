@@ -10,11 +10,10 @@ import {
   Box,
 } from "@mui/material";
 import { api } from "../api";
-import type { Event, EventStats, AISummary } from "../types";
+import type { Event, AISummary } from "../types";
 
 export default function StatsDashboard() {
   const [events, setEvents] = useState<Event[]>([]);
-  const [stats, setStats] = useState<Record<number, EventStats>>({});
   const [summaries, setSummaries] = useState<Record<number, AISummary>>({});
   const [error, setError] = useState("");
 
@@ -23,17 +22,9 @@ export default function StatsDashboard() {
       .listEvents()
       .then(async (list) => {
         setEvents(list);
-        const statsMap: Record<number, EventStats> = {};
         const summariesMap: Record<number, AISummary> = {};
-        
-        for (const event of list) {
-          try {
-            const s = await api.getStats(event.id);
-            statsMap[event.id] = s;
-          } catch (err) {
-            console.error(`Error fetching stats for event ${event.id}:`, err);
-          }
 
+        for (const event of list) {
           try {
             const ai = await api.getAISummary(event.id);
             summariesMap[event.id] = ai;
@@ -41,7 +32,6 @@ export default function StatsDashboard() {
             console.error(`Error fetching AI summary for event ${event.id}:`, err);
           }
         }
-        setStats(statsMap);
         setSummaries(summariesMap);
       })
       .catch((e) => setError(e.message));
@@ -57,18 +47,13 @@ export default function StatsDashboard() {
         </Typography>
         <List>
           {events.map((event) => {
-            const s = stats[event.id];
             const ai = summaries[event.id];
 
             return (
               <ListItem key={event.id} divider sx={{ flexDirection: 'column', alignItems: 'flex-start', py: 2 }}>
                 <ListItemText
                   primary={event.name}
-                  secondary={
-                    s
-                      ? `${s.total_registrations} / ${s.max_capacity} registrations`
-                      : "Loading..."
-                  }
+                  secondary={`${event.attendee_count} / ${event.max_capacity} registrations`}
                 />
                 {ai && (
                   <Box sx={{ mt: 1, p: 1.5, bgcolor: 'grey.50', borderRadius: 1, borderLeft: 4, borderColor: 'primary.main' }}>

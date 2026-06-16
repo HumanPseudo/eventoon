@@ -6,7 +6,13 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from eventoon.ai import AIService, get_ai_service
-from eventoon.schemas import EventCreate, RegistrationCreate
+from eventoon.schemas import (
+    EventCreate,
+    EventResponse,
+    EventStats,
+    RegistrationCreate,
+    RegistrationResponse,
+)
 from eventoon.services import EventService, get_session
 
 router = APIRouter(tags=["events"])
@@ -46,25 +52,29 @@ async def cleanup_test_data(session: AsyncSession = Depends(get_session)):
     return None
 
 
-@router.post("/events", status_code=status.HTTP_201_CREATED)
+@router.post("/events", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 async def create_event(data: EventCreate, session: AsyncSession = Depends(get_session)):
     service = EventService(session)
     return await service.create(data)
 
 
-@router.get("/events")
+@router.get("/events", response_model=list[EventResponse])
 async def list_events(session: AsyncSession = Depends(get_session)):
     service = EventService(session)
     return await service.list_all()
 
 
-@router.get("/events/{event_id}")
+@router.get("/events/{event_id}", response_model=EventResponse)
 async def get_event(event_id: int, session: AsyncSession = Depends(get_session)):
     service = EventService(session)
     return await service.get_by_id(event_id)
 
 
-@router.post("/events/{event_id}/register", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/events/{event_id}/register",
+    response_model=RegistrationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def register_attendee(
     event_id: int, data: RegistrationCreate, session: AsyncSession = Depends(get_session)
 ):
@@ -72,7 +82,7 @@ async def register_attendee(
     return await service.register(event_id, data)
 
 
-@router.get("/events/{event_id}/stats")
+@router.get("/events/{event_id}/stats", response_model=EventStats)
 async def get_stats(event_id: int, session: AsyncSession = Depends(get_session)):
     service = EventService(session)
     return await service.stats(event_id)

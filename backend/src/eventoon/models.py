@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, ForeignKey, String, UniqueConstraint, func
+from sqlalchemy import Date, ForeignKey, Index, String, UniqueConstraint, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -45,4 +45,8 @@ class Registration(Base):
 
     event: Mapped["Event"] = relationship(back_populates="registrations")
 
-    __table_args__ = (UniqueConstraint("event_id", "email", name="uq_event_email"),)
+    __table_args__ = (
+        UniqueConstraint("event_id", "email", name="uq_event_email"),
+        Index("ix_registration_event_id", "event_id"),
+        Index("ix_registration_registration_date", "registration_date"),
+    )

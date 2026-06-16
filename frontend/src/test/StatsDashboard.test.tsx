@@ -33,20 +33,6 @@ const mockEvents = [
   },
 ];
 
-const mockStats1 = {
-  id: 1,
-  name: "Party",
-  total_registrations: 30,
-  max_capacity: 100,
-};
-
-const mockStats2 = {
-  id: 2,
-  name: "Concert",
-  total_registrations: 50,
-  max_capacity: 50,
-};
-
 const mockSummary1 = {
   summary: "Popular event",
   cached: false,
@@ -61,7 +47,7 @@ beforeEach(() => {
   mockFetch.mockReset();
 });
 
-it("shows event stats", async () => {
+it("shows event stats from list data", async () => {
   mockFetch
     .mockResolvedValueOnce({
       ok: true,
@@ -71,17 +57,7 @@ it("shows event stats", async () => {
     .mockResolvedValueOnce({
       ok: true,
       status: 200,
-      text: () => Promise.resolve(JSON.stringify(mockStats1)),
-    })
-    .mockResolvedValueOnce({
-      ok: true,
-      status: 200,
       text: () => Promise.resolve(JSON.stringify(mockSummary1)),
-    })
-    .mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      text: () => Promise.resolve(JSON.stringify(mockStats2)),
     })
     .mockResolvedValueOnce({
       ok: true,
