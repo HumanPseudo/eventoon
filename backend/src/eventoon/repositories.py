@@ -51,6 +51,20 @@ class EventRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_by_id_for_update_with_count(self, event_id: int) -> tuple[Event, int] | None:
+        stmt = (
+            select(Event, func.count(Registration.id).label("cnt"))
+            .outerjoin(Registration, Registration.event_id == Event.id)
+            .where(Event.id == event_id)
+            .group_by(Event.id)
+            .with_for_update()
+        )
+        result = await self.session.execute(stmt)
+        row = result.one_or_none()
+        if row:
+            return row[0], row[1]
+        return None
+
     async def get_top5(self) -> list[tuple[int, str, int]]:
         stmt = (
             select(Event.id, Event.name, func.count(Registration.id).label("total"))

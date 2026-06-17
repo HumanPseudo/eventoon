@@ -123,11 +123,11 @@ class EventService:
     async def register(self, event_id: int, data: RegistrationCreate) -> dict:
         register_limiter.check(f"register:{event_id}:{data.email}")
 
-        event = await self.event_repo.get_by_id_for_update(event_id)
-        if not event:
+        result = await self.event_repo.get_by_id_for_update_with_count(event_id)
+        if not result:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Event not found")
 
-        count = await self.registration_repo.count_by_event(event_id)
+        event, count = result
         if count >= event.max_capacity:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Maximum capacity reached")
 
